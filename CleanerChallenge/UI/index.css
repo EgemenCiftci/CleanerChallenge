@@ -1,0 +1,81 @@
+﻿html, body {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+}
+body {
+    display: flex;
+    background: gray;
+    align-items: center;
+    justify-content: center;
+}
+
+main {
+    position: relative;
+    width: 1280px;
+    height: 800px;
+    background: url(floor.svg);
+}
+main > * {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.tools {
+    background: black;
+    color: white;
+    padding-right: 10px;
+    border-radius: 5px;
+}
+
+#robot {
+    filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.7));
+    margin-left: -32px;
+    margin-top: -32px;
+}
+#overlay {
+    filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.8));
+}
+#dust {
+    mix-blend-mode: multiply;
+    opacity: 0.2;
+}
+.sock {
+    position: absolute;
+    margin-top: -16px;
+    margin-left: -16px;
+}
+.no-overlay canvas {
+    mix-blend-mode: normal !important;
+    opacity: 1 !important;
+}
+.no-overlay img {
+    display: none
+}
+main.no-overlay {
+    background: url(transparent.png)
+}
+
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    color: white;
+    text-align: center;
+}
+
+footer {
+    position: fixed;
+    bottom: 1rem;
+    left: 0;
+    width: 100%;
+
+    color: white;
+    text-align: center;
+}
+footer a {
+    color: white;
+}
+

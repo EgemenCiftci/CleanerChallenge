@@ -1,0 +1,41 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Vacuum Cleaner Challenge</title>
+
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <header>
+        <h1>Vacuum Cleaner Challenge</h1>
+    </header>
+    <main>
+        <canvas width="1280" height="800" id="dust"></canvas>
+        <div id="socks"></div>
+        <img id="robot" width="64" height="64" src="robot.png" />
+        <img id="overlay" width="1280" height="800" src="room1.svg" />
+
+        <div class="tools">
+            <button type="button" onclick="return ToggleView()">
+                Toggle Overlay
+            </button>
+
+            Time: <span id="time">0:00</span>
+            Score: <span id="score">0</span>
+        </div>
+    </main>
+    <footer>
+        <a href="https://www.freepik.com/free-vector/top-view-interior-flat-icons_13187562.htm#query=interior%20floor%20plan&position=23&from_view=keyword&track=ais&uuid=25310abd-4a6f-4fde-9884-2db6181f7175">Image by macrovector</a> on Freepik,
+        <a href="https://www.flaticon.com/free-icons/robot-vacuum-cleaner" title="robot vacuum cleaner icons">Robot vacuum cleaner icons created by itim2101 - Flaticon</a>,
+        <a href="https://www.flaticon.com/free-icons/sock" title="sock icons">Sock icons created by Yobany_MTOM - Flaticon</a>
+    </footer>
+
+    <script>
+        function ToggleView() {
+            document.querySelector('main').classList.toggle('no-overlay')
+        }
+    </script>
+    <script src="index.js"></script>
+</body>
+</html>
