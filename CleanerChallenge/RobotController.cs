@@ -43,34 +43,11 @@ public class RobotController : ControllerBase
             new() { x = 1, y = -1 }
         };
 
-        (Point point, int score)[] pointScores = new (Point point, int score)[directions.Length];
-        byte[,] data = state.Decode2();
-
         // check all directions and calculate scores
-        for (int i = 0; i < directions.Length; i++)
-        {
-            pointScores[i].point = p;
+        IOrderedEnumerable<(Point point, int score)> pointScores = directions.Select(d => CalculatePointScore(state, p, d)).OrderByDescending(ps => ps.score);
 
-            Point direction = directions[i];
-
-            while (true)
-            {
-                Point tempPos = new() { x = pointScores[i].point.x + direction.x, y = pointScores[i].point.y + direction.y };
-
-                if (!IsInArea(tempPos) || IsThereWall(data, tempPos) || IsThereSock(state, tempPos))
-                {
-                    break;
-                }
-                else
-                {
-                    pointScores[i].score += GetDustValue(data, tempPos);
-                    pointScores[i].point = tempPos;
-                }
-            }
-        }
-
-        // get maximum score point
-        Point targetPoint = pointScores.Where(ps => !IsVisited(ps.point)).OrderByDescending(ps => ps.score).Select(ps => ps.point).FirstOrDefault();
+        // get maximum unvisited point score
+        Point targetPoint = pointScores.Where(ps => !IsVisited(ps.point)).Select(ps => ps.point).FirstOrDefault();
 
         if (targetPoint.Equals(default(Point)))
         {
@@ -78,11 +55,37 @@ public class RobotController : ControllerBase
             targetPoint = GetRandomUnvisitedPoint();
         }
 
-        _visitedMap[targetPoint.x, targetPoint.y] = true;
+        SetAsVisited(targetPoint);
 
         return targetPoint;
     }
 
+    private static (Point point, int score) CalculatePointScore(State state, Point start, Point direction)
+    {
+        byte[,] data = state.Decode2();
+        Point point = start;
+        int score = 0;
+
+        while (true)
+        {
+            Point tempPos = new() { x = point.x + direction.x, y = point.y + direction.y };
+
+            if (!IsInArea(tempPos) || IsThereWall(data, tempPos) || IsThereSock(state, tempPos))
+            {
+                break;
+            }
+
+            point = tempPos;
+            score += GetDustValue(data, point);
+        }
+
+        return (point, score);
+    }
+
+    private static void SetAsVisited(Point point)
+    {
+        _visitedMap[point.x, point.y] = true;
+    }
 
     private static bool IsVisited(Point point)
     {
