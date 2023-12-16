@@ -6,15 +6,16 @@ namespace CleanerChallenge;
 [Route("api")]
 public class RobotController : ControllerBase
 {
-    private static Random _random = new();
+    private static readonly Random _random = new();
+    private static readonly List<Point> _directions = new();
     private static readonly bool[,] _visitedMap = new bool[State.Width, State.Height];
+    private const bool isFast = true;
+    private const int sockPenalty = -146880;
 
     [HttpGet("reset")]
     public int Reset()
     {
-        //TODO Initialization Logic
-
-        _random = new Random(2);
+        InitializeDirections(5);
 
         // Random seed for socks will be changed
         return 123;
@@ -25,26 +26,13 @@ public class RobotController : ControllerBase
     {
         Point robotPosition = state.robot;
         Point targetPoint = SelectTargetPoint(state, robotPosition);
-
-        return new Command { x = targetPoint.x, y = targetPoint.y };
+        return new Command { x = targetPoint.x, y = targetPoint.y, fast = isFast };
     }
 
     private static Point SelectTargetPoint(State state, Point p)
     {
-        Point[] directions =
-        {
-            new() { x = 1, y = 0 },
-            new() { x = 1, y = 1 },
-            new() { x = 0, y = 1 },
-            new() { x = -1, y = 1 },
-            new() { x = -1, y = 0 },
-            new() { x = -1, y = -1 },
-            new() { x = 0, y = -1 },
-            new() { x = 1, y = -1 }
-        };
-
         // check all directions and calculate scores
-        IOrderedEnumerable<(Point point, int score)> pointScores = directions.Select(d => CalculatePointScore(state, p, d)).OrderByDescending(ps => ps.score);
+        IOrderedEnumerable<(Point point, int score)> pointScores = _directions.Select(d => CalculatePointScore(state, p, d)).OrderByDescending(ps => ps.score);
 
         // get maximum unvisited point score
         Point targetPoint = pointScores.Where(ps => !IsVisited(ps.point)).Select(ps => ps.point).FirstOrDefault();
@@ -70,13 +58,18 @@ public class RobotController : ControllerBase
         {
             Point tempPos = new() { x = point.x + direction.x, y = point.y + direction.y };
 
-            if (!IsInArea(tempPos) || IsThereWall(data, tempPos) || IsThereSock(state, tempPos))
+            if (!IsInArea(tempPos) || IsThereWall(data, tempPos))
             {
                 break;
             }
 
             point = tempPos;
             score += GetDustValue(data, point);
+
+            if (IsThereSock(state, tempPos))
+            {
+                score += sockPenalty;
+            }
         }
 
         return (point, score);
@@ -153,9 +146,298 @@ public class RobotController : ControllerBase
         return false;
     }
 
+    private static void InitializeDirections(int level)
+    {
+        _directions.Clear();
+
+        for (int i = 0; i <= level; i++)
+        {
+            switch (i)
+            {
+                case 0:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -1, y = 0 },
+                        new() { x = 0, y = -1 },
+                        new() { x = 0, y = 1 },
+                        new() { x = 1, y = 0 },
+                    });
+                    break;
+                case 1:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -1, y = -1 },
+                        new() { x = -1, y = 1 },
+                        new() { x = 1, y = -1 },
+                        new() { x = 1, y = 1 },
+                    });
+                    break;
+                case 2:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -2, y = -1 },
+                        new() { x = -2, y = 1 },
+                        new() { x = -1, y = -2 },
+                        new() { x = -1, y = 2 },
+                        new() { x = 1, y = -2 },
+                        new() { x = 1, y = 2 },
+                        new() { x = 2, y = -1 },
+                        new() { x = 2, y = 1 },
+                    });
+                    break;
+                case 3:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -3, y = -2 },
+                        new() { x = -3, y = -1 },
+                        new() { x = -3, y = 1 },
+                        new() { x = -3, y = 2 },
+                        new() { x = -2, y = -3 },
+                        new() { x = -2, y = 3 },
+                        new() { x = -1, y = -3 },
+                        new() { x = -1, y = 3 },
+                        new() { x = 1, y = -3 },
+                        new() { x = 1, y = 3 },
+                        new() { x = 2, y = -3 },
+                        new() { x = 2, y = 3 },
+                        new() { x = 3, y = -2 },
+                        new() { x = 3, y = -1 },
+                        new() { x = 3, y = 1 },
+                        new() { x = 3, y = 2 },
+                    });
+                    break;
+                case 4:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -4, y = -3 },
+                        new() { x = -4, y = -1 },
+                        new() { x = -4, y = 1 },
+                        new() { x = -4, y = 3 },
+                        new() { x = -3, y = -4 },
+                        new() { x = -3, y = 4 },
+                        new() { x = -1, y = -4 },
+                        new() { x = -1, y = 4 },
+                        new() { x = 1, y = -4 },
+                        new() { x = 1, y = 4 },
+                        new() { x = 3, y = -4 },
+                        new() { x = 3, y = 4 },
+                        new() { x = 4, y = -3 },
+                        new() { x = 4, y = -1 },
+                        new() { x = 4, y = 1 },
+                        new() { x = 4, y = 3 },
+                    });
+                    break;
+                case 5:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -5, y = -4 },
+                        new() { x = -5, y = -3 },
+                        new() { x = -5, y = -2 },
+                        new() { x = -5, y = -1 },
+                        new() { x = -5, y = 1 },
+                        new() { x = -5, y = 2 },
+                        new() { x = -5, y = 3 },
+                        new() { x = -5, y = 4 },
+                        new() { x = -4, y = -5 },
+                        new() { x = -4, y = 5 },
+                        new() { x = -3, y = -5 },
+                        new() { x = -3, y = 5 },
+                        new() { x = -2, y = -5 },
+                        new() { x = -2, y = 5 },
+                        new() { x = -1, y = -5 },
+                        new() { x = -1, y = 5 },
+                        new() { x = 1, y = -5 },
+                        new() { x = 1, y = 5 },
+                        new() { x = 2, y = -5 },
+                        new() { x = 2, y = 5 },
+                        new() { x = 3, y = -5 },
+                        new() { x = 3, y = 5 },
+                        new() { x = 4, y = -5 },
+                        new() { x = 4, y = 5 },
+                        new() { x = 5, y = -4 },
+                        new() { x = 5, y = -3 },
+                        new() { x = 5, y = -2 },
+                        new() { x = 5, y = -1 },
+                        new() { x = 5, y = 1 },
+                        new() { x = 5, y = 2 },
+                        new() { x = 5, y = 3 },
+                        new() { x = 5, y = 4 },
+                    });
+                    break;
+                case 6:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -6, y = -5 },
+                        new() { x = -6, y = -1 },
+                        new() { x = -6, y = 1 },
+                        new() { x = -6, y = 5 },
+                        new() { x = -5, y = -6 },
+                        new() { x = -5, y = 6 },
+                        new() { x = -1, y = -6 },
+                        new() { x = -1, y = 6 },
+                        new() { x = 1, y = -6 },
+                        new() { x = 1, y = 6 },
+                        new() { x = 5, y = -6 },
+                        new() { x = 5, y = 6 },
+                        new() { x = 6, y = -5 },
+                        new() { x = 6, y = -1 },
+                        new() { x = 6, y = 1 },
+                        new() { x = 6, y = 5 },
+                    });
+                    break;
+                case 7:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -7, y = -6 },
+                        new() { x = -7, y = -5 },
+                        new() { x = -7, y = -4 },
+                        new() { x = -7, y = -3 },
+                        new() { x = -7, y = -2 },
+                        new() { x = -7, y = -1 },
+                        new() { x = -7, y = 1 },
+                        new() { x = -7, y = 2 },
+                        new() { x = -7, y = 3 },
+                        new() { x = -7, y = 4 },
+                        new() { x = -7, y = 5 },
+                        new() { x = -7, y = 6 },
+                        new() { x = -6, y = -7 },
+                        new() { x = -6, y = 7 },
+                        new() { x = -5, y = -7 },
+                        new() { x = -5, y = 7 },
+                        new() { x = -4, y = -7 },
+                        new() { x = -4, y = 7 },
+                        new() { x = -3, y = -7 },
+                        new() { x = -3, y = 7 },
+                        new() { x = -2, y = -7 },
+                        new() { x = -2, y = 7 },
+                        new() { x = -1, y = -7 },
+                        new() { x = -1, y = 7 },
+                        new() { x = 1, y = -7 },
+                        new() { x = 1, y = 7 },
+                        new() { x = 2, y = -7 },
+                        new() { x = 2, y = 7 },
+                        new() { x = 3, y = -7 },
+                        new() { x = 3, y = 7 },
+                        new() { x = 4, y = -7 },
+                        new() { x = 4, y = 7 },
+                        new() { x = 5, y = -7 },
+                        new() { x = 5, y = 7 },
+                        new() { x = 6, y = -7 },
+                        new() { x = 6, y = 7 },
+                        new() { x = 7, y = -6 },
+                        new() { x = 7, y = -5 },
+                        new() { x = 7, y = -4 },
+                        new() { x = 7, y = -3 },
+                        new() { x = 7, y = -2 },
+                        new() { x = 7, y = -1 },
+                        new() { x = 7, y = 1 },
+                        new() { x = 7, y = 2 },
+                        new() { x = 7, y = 3 },
+                        new() { x = 7, y = 4 },
+                        new() { x = 7, y = 5 },
+                        new() { x = 7, y = 6 },
+                    });
+                    break;
+                case 8:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -8, y = -7 },
+                        new() { x = -8, y = -5 },
+                        new() { x = -8, y = -3 },
+                        new() { x = -8, y = -1 },
+                        new() { x = -8, y = 1 },
+                        new() { x = -8, y = 3 },
+                        new() { x = -8, y = 5 },
+                        new() { x = -8, y = 7 },
+                        new() { x = -7, y = -8 },
+                        new() { x = -7, y = 8 },
+                        new() { x = -5, y = -8 },
+                        new() { x = -5, y = 8 },
+                        new() { x = -3, y = -8 },
+                        new() { x = -3, y = 8 },
+                        new() { x = -1, y = -8 },
+                        new() { x = -1, y = 8 },
+                        new() { x = 1, y = -8 },
+                        new() { x = 1, y = 8 },
+                        new() { x = 3, y = -8 },
+                        new() { x = 3, y = 8 },
+                        new() { x = 5, y = -8 },
+                        new() { x = 5, y = 8 },
+                        new() { x = 7, y = -8 },
+                        new() { x = 7, y = 8 },
+                        new() { x = 8, y = -7 },
+                        new() { x = 8, y = -5 },
+                        new() { x = 8, y = -3 },
+                        new() { x = 8, y = -1 },
+                        new() { x = 8, y = 1 },
+                        new() { x = 8, y = 3 },
+                        new() { x = 8, y = 5 },
+                        new() { x = 8, y = 7 },
+                    });
+                    break;
+                case 9:
+                    _directions.AddRange(new Point[]
+                    {
+                        new() { x = -9, y = -8 },
+                        new() { x = -9, y = -7 },
+                        new() { x = -9, y = -5 },
+                        new() { x = -9, y = -4 },
+                        new() { x = -9, y = -2 },
+                        new() { x = -9, y = -1 },
+                        new() { x = -9, y = 1 },
+                        new() { x = -9, y = 2 },
+                        new() { x = -9, y = 4 },
+                        new() { x = -9, y = 5 },
+                        new() { x = -9, y = 7 },
+                        new() { x = -9, y = 8 },
+                        new() { x = -8, y = -9 },
+                        new() { x = -8, y = 9 },
+                        new() { x = -7, y = -9 },
+                        new() { x = -7, y = 9 },
+                        new() { x = -5, y = -9 },
+                        new() { x = -5, y = 9 },
+                        new() { x = -4, y = -9 },
+                        new() { x = -4, y = 9 },
+                        new() { x = -2, y = -9 },
+                        new() { x = -2, y = 9 },
+                        new() { x = -1, y = -9 },
+                        new() { x = -1, y = 9 },
+                        new() { x = 1, y = -9 },
+                        new() { x = 1, y = 9 },
+                        new() { x = 2, y = -9 },
+                        new() { x = 2, y = 9 },
+                        new() { x = 4, y = -9 },
+                        new() { x = 4, y = 9 },
+                        new() { x = 5, y = -9 },
+                        new() { x = 5, y = 9 },
+                        new() { x = 7, y = -9 },
+                        new() { x = 7, y = 9 },
+                        new() { x = 8, y = -9 },
+                        new() { x = 8, y = 9 },
+                        new() { x = 9, y = -8 },
+                        new() { x = 9, y = -7 },
+                        new() { x = 9, y = -5 },
+                        new() { x = 9, y = -4 },
+                        new() { x = 9, y = -2 },
+                        new() { x = 9, y = -1 },
+                        new() { x = 9, y = 1 },
+                        new() { x = 9, y = 2 },
+                        new() { x = 9, y = 4 },
+                        new() { x = 9, y = 5 },
+                        new() { x = 9, y = 7 },
+                        new() { x = 9, y = 8 },
+                    });
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
     [HttpPost("restart")]
     public bool Restart(GameOver game)
     {
+        Console.WriteLine(game.score);
         return false;
     }
 }
